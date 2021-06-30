@@ -21,11 +21,16 @@ async function getPropertiesList(){
     })
 }
 
-async function getDailyData(viewId, startDate, endDate) {
+async function getDailyData(viewId, startDate, endDate, organic = false) {
     const analyticsReporting = google.analyticsreporting({
         version: 'v4',
         auth: jwt
     })
+
+    let filter = ''
+    if (organic) {
+        filter = 'ga:medium==organic'
+    }
 
     const res = await analyticsReporting.reports.batchGet({
         requestBody: {
@@ -37,7 +42,8 @@ async function getDailyData(viewId, startDate, endDate) {
                 }],
                 metrics: [{
                     expression: 'ga:sessions'
-                }]
+                }],
+                filtersExpression: filter
             }]
         }
     })
@@ -46,8 +52,18 @@ async function getDailyData(viewId, startDate, endDate) {
 }
 
 async function getData() {
-    console.log(await getPropertiesList())
-    console.log(await getDailyData('222499599', 'today', 'today'))
+    const viewId = '222499599'
+    const data = {
+        today: {
+            total: await getDailyData(viewId, 'today', 'today'),
+            organic: await getDailyData(viewId, 'today', 'today', true),
+        },
+        yesterday: {
+            total: await getDailyData(viewId, 'yesterday', 'yesterday'),
+            organic: await getDailyData(viewId, 'yesterday', 'yesterday', true),
+        },
+    }
+    console.log(data)
 }
 
 getData()
