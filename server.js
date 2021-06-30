@@ -1,12 +1,11 @@
 require('dotenv').config()
 
-const express = require('express')
-
-const app = express()
-
+const moment = require('moment')
 const { google } = require('googleapis')
 const scopes = ['https://www.googleapis.com/auth/analytics', 'https://www.googleapis.com/auth/analytics.edit']
 const jwt = new google.auth.JWT(process.env.CLIENT_EMAIL, null, process.env.PRIVATE_KEY, scopes)
+
+// const app = express()
 
 async function getPropertiesList(){
     const response = await jwt.authorize()
@@ -54,6 +53,9 @@ async function getDailyData(viewId, startDate, endDate, organic = false) {
 async function getData() {
     const list = await getPropertiesList()
 
+    const daysAgo30 = moment().subtract(30, 'days').format('YYYY-MM-DD')
+    const daysAgo60 = moment().subtract(60, 'days').format('YYYY-MM-DD')
+
     const getDataOfItem = async item => {
         return {
             property: item,
@@ -64,6 +66,12 @@ async function getData() {
             yesterday: {
                 total: (await getDailyData(item.id, 'yesterday', 'yesterday')),
                 organic: await getDailyData(item.id, 'yesterday', 'yesterday', true),
+            },
+            monthly: {
+                total: await getDailyData(item.id, '30daysAgo', 'today'),
+                improvement_total: await getDailyData(item.id, daysAgo30, daysAgo60),
+                organic: await getDailyData(item.id, '30daysAgo', 'today', true),
+                improvement_organic: await getDailyData(item.id, daysAgo30, daysAgo60, true),
             }
         }
     }
@@ -78,5 +86,5 @@ async function getData() {
 
 getData()
 
-
-app.listen(3000, () => console.log('Server Ready'))
+const express = require('express')
+express().listen(3000, () => console.log('Server Ready'))
