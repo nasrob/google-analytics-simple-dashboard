@@ -52,18 +52,28 @@ async function getDailyData(viewId, startDate, endDate, organic = false) {
 }
 
 async function getData() {
-    const viewId = '222499599'
-    const data = {
-        today: {
-            total: await getDailyData(viewId, 'today', 'today'),
-            organic: await getDailyData(viewId, 'today', 'today', true),
-        },
-        yesterday: {
-            total: await getDailyData(viewId, 'yesterday', 'yesterday'),
-            organic: await getDailyData(viewId, 'yesterday', 'yesterday', true),
-        },
+    const list = await getPropertiesList()
+
+    const getDataOfItem = async item => {
+        return {
+            property: item,
+            today: {
+                total: (await getDailyData(item.id, 'today', 'today')),
+                organic: await getDailyData(item.id, 'today', 'today', true),
+            },
+            yesterday: {
+                total: (await getDailyData(item.id, 'yesterday', 'yesterday')),
+                organic: await getDailyData(item.id, 'yesterday', 'yesterday', true),
+            }
+        }
     }
-    console.log(data)
+
+    /**
+     *  Every function returns a promise, every promise must resolve until we can get the result.
+        Then we await the result of Promise.all(), since itself returns a promise.
+     */
+    const result = await Promise.all(list.map(item => getDataOfItem(item)))
+    console.log(result)
 }
 
 getData()
