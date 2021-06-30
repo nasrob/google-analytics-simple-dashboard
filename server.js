@@ -4,6 +4,7 @@ const moment = require('moment')
 const { google } = require('googleapis')
 const scopes = ['https://www.googleapis.com/auth/analytics', 'https://www.googleapis.com/auth/analytics.edit']
 const jwt = new google.auth.JWT(process.env.CLIENT_EMAIL, null, process.env.PRIVATE_KEY, scopes)
+const fs = require('fs')
 
 // const app = express()
 
@@ -69,9 +70,9 @@ async function getData() {
             },
             monthly: {
                 total: await getDailyData(item.id, '30daysAgo', 'today'),
-                improvement_total: await getDailyData(item.id, daysAgo30, daysAgo60),
+                improvement_total: await getDailyData(item.id, daysAgo60, daysAgo30),
                 organic: await getDailyData(item.id, '30daysAgo', 'today', true),
-                improvement_organic: await getDailyData(item.id, daysAgo30, daysAgo60, true),
+                improvement_organic: await getDailyData(item.id, daysAgo60, daysAgo30, true),
             }
         }
     }
@@ -85,6 +86,24 @@ async function getData() {
 }
 
 getData()
+
+const storeData = (data) => {
+    try {
+        fs.writeFileSync('.data/data.json', JSON.stringify(data))
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+const loadData = () => {
+    try {
+        const data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'))
+        return data
+    } catch (err) {
+        console.error(err)
+        return false
+    }
+}
 
 const express = require('express')
 express().listen(3000, () => console.log('Server Ready'))
