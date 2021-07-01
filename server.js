@@ -15,7 +15,7 @@ const app = express()
 app.set('view engine', 'pug')
 app.set('views', path.join(__dirname, 'views'))
 
-app.get('/', (req, res) => res.render('index'))
+app.get('/', (req, res) => res.render('index', data))
 
 async function getPropertiesList(){
     const response = await jwt.authorize()
@@ -151,7 +151,36 @@ const getAnalyticsData = async () => {
         }
         storeData()
     }
-    data.today = await getTodayData()
+    data.today = await getTodayData();
+    
+    data.sums = data.aggregate.reduce((acc, current) => {
+        return {
+            today: {
+                total: parseInt(current.today.total) + parseInt(acc.today.total),
+                organic: parseInt(current.today.organic) + parseInt(acc.today.organic)
+            },
+            yesterday: {
+                total: parseInt(current.yesterday.total) + parseInt(acc.yesterday.total),
+                organic: parseInt(current.yesterday.organic) + parseInt(acc.yesterday.organic)
+            },
+            monthly: {
+                total: parseInt(current.monthly.total) + parseInt(acc.monthly.total),
+                organic: parseInt(current.monthly.organic) + parseInt(acc.monthly.organic)
+            },
+        }
+    }, {
+        today: { total: 0, organic: 0 },
+        yesterday: { total: 0, organic: 0 },
+        monthly: { total: 0, organic: 0 }
+    })
+    
+    data.sites = data.aggregate.map(item => {
+        return {
+            name: item.property.name,
+            id: item.property.id
+        }
+    })
+
     return data
 }
 

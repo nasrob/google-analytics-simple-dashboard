@@ -1,0 +1,25 @@
+html
+    head
+        link(rel="stylesheet", href="public/style.css")
+    body
+        #container
+            #sidebar
+                ul
+                    li.active All
+                    each site in sites
+                        li= site.name
+            #main
+                #select
+                #stats
+                    #today
+                        h2 Today
+                        p.total #{sums.today.total}
+                        p.organic.hidden #{sums.today.organic}
+                    #yesterday
+                        h2 Yesterday
+                        p.total #{sums.yesterday.total}
+                        p.organic.hidden #{sums.yesterday.organic}
+                    #monthly
+                        h2 Last 30 days
+                        p.total #{sums.monthly.total}
+                        p.organic.hidden #{sums.monthly.organic}
