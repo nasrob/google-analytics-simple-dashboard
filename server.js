@@ -8,14 +8,12 @@ const scopes = ['https://www.googleapis.com/auth/analytics', 'https://www.google
 const jwt = new google.auth.JWT(process.env.CLIENT_EMAIL, null, process.env.PRIVATE_KEY, scopes)
 const fs = require('fs')
 
-const dataFilePath = '.data/data.json'
+const dataFilePath = './data/data.json'
 
 const app = express()
 
 app.set('view engine', 'pug')
 app.set('views', path.join(__dirname, 'views'))
-
-app.get('/', (req, res) => res.render('index', data))
 
 async function getPropertiesList(){
     const response = await jwt.authorize()
@@ -153,39 +151,40 @@ const getAnalyticsData = async () => {
     }
     data.today = await getTodayData();
     
-    data.sums = data.aggregate.reduce((acc, current) => {
-        return {
-            today: {
-                total: parseInt(current.today.total) + parseInt(acc.today.total),
-                organic: parseInt(current.today.organic) + parseInt(acc.today.organic)
-            },
-            yesterday: {
-                total: parseInt(current.yesterday.total) + parseInt(acc.yesterday.total),
-                organic: parseInt(current.yesterday.organic) + parseInt(acc.yesterday.organic)
-            },
-            monthly: {
-                total: parseInt(current.monthly.total) + parseInt(acc.monthly.total),
-                organic: parseInt(current.monthly.organic) + parseInt(acc.monthly.organic)
-            },
-        }
-    }, {
-        today: { total: 0, organic: 0 },
-        yesterday: { total: 0, organic: 0 },
-        monthly: { total: 0, organic: 0 }
-    })
+    // data.sums = data.aggregate.reduce((acc, current) => {
+    //     return {
+    //         today: {
+    //             total: parseInt(current.today.total) + parseInt(acc.today.total),
+    //             organic: parseInt(current.today.organic) + parseInt(acc.today.organic)
+    //         },
+    //         yesterday: {
+    //             total: parseInt(current.yesterday.total) + parseInt(acc.yesterday.total),
+    //             organic: parseInt(current.yesterday.organic) + parseInt(acc.yesterday.organic)
+    //         },
+    //         monthly: {
+    //             total: parseInt(current.monthly.total) + parseInt(acc.monthly.total),
+    //             organic: parseInt(current.monthly.organic) + parseInt(acc.monthly.organic)
+    //         },
+    //     }
+    // }, {
+    //     today: { total: 0, organic: 0 },
+    //     yesterday: { total: 0, organic: 0 },
+    //     monthly: { total: 0, organic: 0 }
+    // })
     
-    data.sites = data.aggregate.map(item => {
-        return {
-            name: item.property.name,
-            id: item.property.id
-        }
-    })
+    // data.sites = data.aggregate.map(item => {
+    //     return {
+    //         name: item.property.name,
+    //         id: item.property.id
+    //     }
+    // })
 
     return data
 }
 
 const data = getAnalyticsData()
-data.then(data => console.log(data))
-
-
-express().listen(3000, () => console.log('Server Ready'))
+data.then(data => {
+    console.log(data)
+    app.get('/', (req, res) => res.render('index', data))
+    express().listen(3000, () => console.log('Server Ready'))
+})
