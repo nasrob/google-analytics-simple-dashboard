@@ -1,12 +1,21 @@
 require('dotenv').config()
 
+const express = require('express')
 const moment = require('moment')
+const path = require('path')
 const { google } = require('googleapis')
 const scopes = ['https://www.googleapis.com/auth/analytics', 'https://www.googleapis.com/auth/analytics.edit']
 const jwt = new google.auth.JWT(process.env.CLIENT_EMAIL, null, process.env.PRIVATE_KEY, scopes)
 const fs = require('fs')
 
-// const app = express()
+const dataFilePath = '.data/data.json'
+
+const app = express()
+
+app.set('view engine', 'pug')
+app.set('views', path.join(__dirname, 'views'))
+
+app.get('/', (req, res) => res.render('index'))
 
 async function getPropertiesList(){
     const response = await jwt.authorize()
@@ -59,11 +68,6 @@ async function getData() {
 
     const getDataOfItem = async item => {
         return {
-            property: item,
-            today: {
-                total: (await getDailyData(item.id, 'today', 'today')),
-                organic: await getDailyData(item.id, 'today', 'today', true),
-            },
             yesterday: {
                 total: (await getDailyData(item.id, 'yesterday', 'yesterday')),
                 organic: await getDailyData(item.id, 'yesterday', 'yesterday', true),
@@ -81,15 +85,13 @@ async function getData() {
      *  Every function returns a promise, every promise must resolve until we can get the result.
         Then we await the result of Promise.all(), since itself returns a promise.
      */
-    const result = await Promise.all(list.map(item => getDataOfItem(item)))
-    console.log(result)
-}
+    return result = await Promise.all(list.map(item => getDataOfItem(item)))
 
-getData()
+}
 
 const storeData = (data) => {
     try {
-        fs.writeFileSync('.data/data.json', JSON.stringify(data))
+        fs.writeFileSync(dataFilePath, JSON.stringify(data))
     } catch (err) {
         console.error(err)
     }
@@ -105,5 +107,56 @@ const loadData = () => {
     }
 }
 
-const express = require('express')
+async function getTodayData() {
+    const list = await getPropertiesList()
+
+    const getDataOfItem = async item => {
+        return {
+            property: item,
+            today: {
+                total: (await getDailyData(item.id, 'today', 'today')),
+                organic: await getDailyData(item.id, 'today', 'today', true),
+            }
+        }
+    }
+    return await Promise.all(list.map(item => getDataOfItem(item)))
+}
+
+// get the last update date of a file
+const getFileUpdatedDate = (path) => {
+    const stats = fs.statSync(path)
+    return stats.mtime
+}
+
+// check if a date is "today"
+const isToday = (someDate) => {
+    const today = new Date()
+    return someDate.getDate() == today.getDate &&
+        someDate.getMonth() == today.getMonth() &&
+        someDate.getFullYear() == today.getFullYear()
+}
+
+// check if a file was modified "today"
+const wasModifiedToday = (path) => {
+    return isToday(getFileUpdatedDate(path))
+}
+
+const getAnalyticsData = async () => {
+    let data = null
+    if (fs.existsSync(dataFilePath) && wasModifiedToday(dataFilePath)) {
+        data = loadData()
+    } else {
+        data = {
+            aggregate: await getData()
+        }
+        storeData()
+    }
+    data.today = await getTodayData()
+    return data
+}
+
+const data = getAnalyticsData()
+data.then(data => console.log(data))
+
+
 express().listen(3000, () => console.log('Server Ready'))
