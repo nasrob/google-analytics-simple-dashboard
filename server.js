@@ -151,33 +151,33 @@ const getAnalyticsData = async () => {
     }
     data.today = await getTodayData();
     
-    // data.sums = data.aggregate.reduce((acc, current) => {
-    //     return {
-    //         today: {
-    //             total: parseInt(current.today.total) + parseInt(acc.today.total),
-    //             organic: parseInt(current.today.organic) + parseInt(acc.today.organic)
-    //         },
-    //         yesterday: {
-    //             total: parseInt(current.yesterday.total) + parseInt(acc.yesterday.total),
-    //             organic: parseInt(current.yesterday.organic) + parseInt(acc.yesterday.organic)
-    //         },
-    //         monthly: {
-    //             total: parseInt(current.monthly.total) + parseInt(acc.monthly.total),
-    //             organic: parseInt(current.monthly.organic) + parseInt(acc.monthly.organic)
-    //         },
-    //     }
-    // }, {
-    //     today: { total: 0, organic: 0 },
-    //     yesterday: { total: 0, organic: 0 },
-    //     monthly: { total: 0, organic: 0 }
-    // })
+    data.sums = data.aggregate.reduce((acc, current) => {
+        return {
+            today: {
+                total: parseInt(current.today.total) + parseInt(acc.today.total),
+                organic: parseInt(current.today.organic) + parseInt(acc.today.organic)
+            },
+            yesterday: {
+                total: parseInt(current.yesterday.total) + parseInt(acc.yesterday.total),
+                organic: parseInt(current.yesterday.organic) + parseInt(acc.yesterday.organic)
+            },
+            monthly: {
+                total: parseInt(current.monthly.total) + parseInt(acc.monthly.total),
+                organic: parseInt(current.monthly.organic) + parseInt(acc.monthly.organic)
+            },
+        }
+    }, {
+        today: { total: 0, organic: 0 },
+        yesterday: { total: 0, organic: 0 },
+        monthly: { total: 0, organic: 0 }
+    })
     
-    // data.sites = data.aggregate.map(item => {
-    //     return {
-    //         name: item.property.name,
-    //         id: item.property.id
-    //     }
-    // })
+    data.sites = data.aggregate.map(item => {
+        return {
+            name: item.property.name,
+            id: item.property.id
+        }
+    })
 
     return data
 }
@@ -187,4 +187,16 @@ data.then(data => {
     console.log(data)
     app.get('/', (req, res) => res.render('index', data))
     express().listen(3000, () => console.log('Server Ready'))
+})
+
+app.get('/stats', (req, res) => {
+    const site = req.query.site
+
+    if (site === 'All') {
+        res.json(data.sums)
+        return
+    } else {
+        const filteredData = data.aggregate.filter(item => item.property.name === site)
+        res.json(filteredData[0])
+    }
 })

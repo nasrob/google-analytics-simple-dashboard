@@ -30,4 +30,31 @@ document.addEventListener('DOMContentLoaded', (event) => {
             event.preventDefault()
         })
     }
+
+    const sidebarLinks = document.querySelectorAll('#sidebar li')
+
+    for (const sidebarLink of sidebarLinks) {
+        sidebarLink.addEventListener('click', function (event) {
+            for (const sidebarLink of sidebarLinks) {
+                sidebarLink.classList.remove('active')
+            }
+            this.classList.add('active')
+            fetchStats(this.textContent)
+        })
+    }
+
+    const fetchStats = site => {
+        fetch('/stats?site=' + encodeURIComponent(site)
+            .then(response => response.json())
+            .then(body => {
+                document.querySelector('#today .total').innerText = body.today.total
+                document.querySelector('#today organic').innerText = body.today.organic
+                document.querySelector('#yesterday .total').innerText = body.yesterday.total
+                document.querySelector('#yesterday .organic').innerText = body.yesterday.organic
+                document.querySelector('#monthly .total').innerText = body.monthly.total
+                document.querySelector('#monthly .organic').innerText = body.monthly.organic
+            })
+            .catch(err => console.error(err))
+        )
+    }
 })
